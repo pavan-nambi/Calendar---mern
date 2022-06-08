@@ -45,7 +45,7 @@ const readline = require("readline");
 const { google } = require("googleapis");
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ["https://www.googleapis.com/auth/calendar.readonly"];
+const SCOPES = ["https://www.googleapis.com/auth/calendar"];
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -96,22 +96,26 @@ function getAccessToken(oAuth2Client, callback) {
     input: process.stdin,
     output: process.stdout,
   });
-  // rl.question("Enter the code from that page here: ", (code) => {
-  //   rl.close();
-  const code =
-    "4/0AX4XfWjEwoyCx81GOmdqGok2IMUk3yLgi4BxvnPJQGPy4NtFSm1JipGthpLtMoC8vhpgYQ";
-  oAuth2Client.getToken(code, (err, token) => {
-    if (err) return console.error("Error retrieving access token", err);
-    oAuth2Client.setCredentials(token);
-    // Store the token to disk for later program executions
-    fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
-      if (err) return console.error(err);
-      console.log("Token stored to", TOKEN_PATH);
+  rl.question("Enter the code from that page here: ", (code) => {
+    rl.close();
+    //   let code =
+    //     "";
+    oAuth2Client.getToken(code, (err, token) => {
+      if (err) return console.error("Error retrieving access token", err);
+      oAuth2Client.setCredentials(token);
+      // Store the token to disk for later program executions
+      fs.writeFile(TOKEN_PATH, JSON.stringify(token), (err) => {
+        if (err) return console.error(err);
+        console.log("Token stored to", TOKEN_PATH);
+      });
+      callback(oAuth2Client);
     });
-    callback(oAuth2Client);
   });
-  // });
 }
+
+//******************************************************************** */
+
+/*********************************************************************** */
 
 /**
  * Lists the next 10 events on the user's primary calendar.
@@ -119,6 +123,49 @@ function getAccessToken(oAuth2Client, callback) {
  */
 function listEvents(auth) {
   const calendar = google.calendar({ version: "v3", auth });
+  /********************************************************************* */
+  const event = {
+    summary: "Google I/O 2015",
+    location: "800 Howard St., San Francisco, CA 94103",
+    description: "A chance to hear more about Google's developer products.",
+    start: {
+      dateTime: "2022-06-28T09:00:00-07:00",
+      timeZone: "America/Los_Angeles",
+    },
+    end: {
+      dateTime: "2022-06-29T17:00:00-07:00",
+      timeZone: "America/Los_Angeles",
+    },
+    recurrence: ["RRULE:FREQ=DAILY;COUNT=2"],
+    attendees: [{ email: "lpage@example.com" }, { email: "sbrin@example.com" }],
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "email", minutes: 24 * 60 },
+        { method: "popup", minutes: 10 },
+      ],
+    },
+  };
+
+  calendar.events.insert(
+    {
+      auth: auth,
+      calendarId: "primary",
+      resource: event,
+    },
+    function (err, event) {
+      //   console.log(event.data);
+      if (err) {
+        console.log(
+          "There was an error contacting the Calendar service: " + err
+        );
+        return;
+      }
+      console.log("Event created: %s", event.data.htmlLink);
+    }
+  );
+
+  /************************************************************************ */
   calendar.events.list(
     {
       calendarId: "primary",
